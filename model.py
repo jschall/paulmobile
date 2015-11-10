@@ -43,21 +43,21 @@ def dyn(y, t):
         [0],
         [B4]])
 
-    desPos = 100
-    desVel = sqrt_ctrl(desPos-y[0], .7, radians(10)*A23)
+    desPos = 5.*sin(t*0.4)
+    desVel = sqrt_ctrl(desPos-y[0], .275, radians(10)*A23)# + 2.*cos(t*0.4)
     if desVel > 10.:
         desVel=10.
     elif desVel < -10.:
         desVel=-10.
-    desAcc = (desVel-y[1])*2.
+    #desVel = 10.
+    desAcc = (desVel-y[1])*.9# + -0.8*sin(t*0.4)
     if desAcc > radians(10)*A23:
         desAcc = radians(10)*A23
     elif desAcc < -radians(10)*A23:
         desAcc = -radians(10)*A23
     #desAcc = 0.
     desPhi = desAcc/A23
-
-    desPhiDot = (desPhi-y[2])*4.
+    desPhiDot = (desPhi-y[2])*3.
     torque = (desPhiDot-y[3])*20.
     if torque > 1.5:
         torque = 1.5
@@ -66,9 +66,27 @@ def dyn(y, t):
 
     return np.squeeze(np.asarray(A*np.matrix(y).T+B*torque))
 
+state = np.array([0.,1.,0.0,0.])
+
+from visual import *
+t = 0.
+dt = 1./60.
+body = cylinder(pos=(0,0.1,-0.2),axis=(0,0,.4),radius=.1, color=color.orange)
+pendulum = cylinder(pos=(0,0,0), axis=(0,2,0), radius=.02, color=color.orange)
+despos = sphere(pos = (0,0,0), radius=.05)
+cylinder(pos=(0,0,0), axis=(0,-.1,0),radius=10., material=materials.wood)
+while True:
+    rate(60)
+    state += dyn(state, t)*dt
+    body.pos = (state[0],0.1,-0.2)
+    pendulum.pos = (state[0],0.1,0)
+    pendulum.axis = (2.*sin(state[2]),2.*cos(state[2]),0)
+    despos.pos = (5.*sin(t*0.4),1,0)
+    t += dt
+
 x = np.linspace(0,20,1000)
 
-y = odeint(dyn,(0.,0.,0.0,0.),x)
+y = odeint(dyn,(0.,0.,radians(0),0.),x)
 
 l1 = plt.plot(x,y[0:,0])
 l2 = plt.plot(x,y[0:,1])
